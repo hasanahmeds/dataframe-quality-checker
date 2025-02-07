@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+import math
+import re
 import json
 from pathlib import Path
 
@@ -41,7 +43,7 @@ class Schema:
         return cls.from_dict(json.loads(path.read_text(encoding='utf-8')))
 
 def validate_rule(rule: dict) -> None:
-    if set(rule)-{'type','required','nullable','max_missing','unique'}:
+    if set(rule)-{'type','required','nullable','max_missing','unique','min','max','allowed','regex','outlier'}:
         raise ValueError('unknown column rule')
     if rule.get('type') not in TYPES:
         raise ValueError('unsupported or missing column type')
@@ -52,3 +54,34 @@ def validate_rule(rule: dict) -> None:
         value=rule['max_missing']
         if type(value) not in (int,float) or not 0<=value<=1:
             raise ValueError('max_missing must be a fraction in 0..1')
+
+    for key in ('min','max'):
+        if key in rule and (rule['type'] not in {'number','integer'} or
+                            type(rule[key]) not in (int,float) or not math.isfinite(rule[key])):
+            raise ValueError('bounds require finite numeric values on numeric columns')
+    if 'min' in rule and 'max' in rule and rule['min']>rule['max']:
+        raise ValueError('min must not exceed max')
+    if 'allowed' in rule:
+        if not isinstance(rule['allowed'],list) or not rule['allowed'] or any(
+            type(v) not in (str,int,float,bool) or (isinstance(v,float) and not math.isfinite(v))
+            for v in rule['allowed']):
+            raise ValueError('allowed must contain finite JSON scalar values')
+    if 'regex' in rule:
+        if rule['type']!='string' or not isinstance(rule['regex'],str):
+            raise ValueError('regex requires a string pattern and string column')
+        try:
+            re.compile(rule['regex'])
+        except re.error as exc:
+            raise ValueError('invalid regex') from exc
+    if 'outlier' in rule:
+        option=rule['outlier']
+        if rule['type'] not in {'number','integer'} or not isinstance(option,dict) or set(option)-{'method','threshold','min_samples'}:
+            raise ValueError('invalid outlier configuration')
+        if option.get('method') not in {'iqr','zscore'}:
+            raise ValueError('outlier method must be iqr or zscore')
+        threshold=option.get('threshold',1.5 if option['method']=='iqr' else 3.0)
+        if type(threshold) not in (int,float) or not math.isfinite(threshold) or threshold<=0:
+            raise ValueError('outlier threshold must be finite and positive')
+        count=option.get('min_samples',5)
+        if type(count) is not int or count<2:
+            raise ValueError('outlier min_samples must be at least 2')
