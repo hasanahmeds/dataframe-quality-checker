@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68,<81"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "dataframe-quality-checker"
+version = "1.0.0"
+description = "Schema-driven pandas validation with auditable reports"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["pandas>=2.2,<3", "numpy>=1.26,<3"]
+[project.scripts]
+df-quality = "dataframe_quality_checker.cli:main"
+[tool.setuptools.packages.find]
+include = ["dataframe_quality_checker*"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
