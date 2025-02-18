@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "min_rows": 1,
+  "allow_extra": false,
+  "unique_rows": true,
+  "sample_limit": 5,
+  "columns": {
+    "customer_id": {
+      "type": "integer",
+      "nullable": false,
+      "unique": true
+    },
+    "age": {
+      "type": "integer",
+      "nullable": false,
+      "min": 0,
+      "max": 120
+    },
+    "email": {
+      "type": "string",
+      "nullable": false,
+      "regex": "[^@\\s]+@[^@\\s]+\\.[^@\\s]+"
+    },
+    "country": {
+      "type": "string",
+      "allowed": [
+        "US",
+        "IN",
+        "GB"
+      ]
+    },
+    "spend": {
+      "type": "number",
+      "min": 0,
+      "max_missing": 0.1,
+      "outlier": {
+        "method": "iqr",
+        "threshold": 1.5,
+        "min_samples": 5
+      }
+    }
+  }
+}

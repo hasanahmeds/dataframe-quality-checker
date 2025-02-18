@@ -1,0 +1,7 @@
+customer_id,age,email,country,spend
+1,22,a@example.invalid,US,100
+2,30,b@example.invalid,IN,110
+3,34,c@example.invalid,US,120
+4,28,d@example.invalid,GB,130
+5,42,e@example.invalid,IN,140
+6,50,f@example.invalid,GB,150
