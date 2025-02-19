@@ -40,7 +40,7 @@ class Schema:
 
     @classmethod
     def load(cls,path: Path) -> "Schema":
-        return cls.from_dict(json.loads(path.read_text(encoding='utf-8')))
+        return cls.from_dict(json.loads(path.read_text(encoding='utf-8'),object_pairs_hook=unique_keys,parse_constant=reject_constant))
 
 def validate_rule(rule: dict) -> None:
     if set(rule)-{'type','required','nullable','max_missing','unique','min','max','allowed','regex','outlier'}:
@@ -85,3 +85,15 @@ def validate_rule(rule: dict) -> None:
         count=option.get('min_samples',5)
         if type(count) is not int or count<2:
             raise ValueError('outlier min_samples must be at least 2')
+
+
+def unique_keys(pairs):
+    result={}
+    for key,value in pairs:
+        if key in result:
+            raise ValueError(f'duplicate schema key: {key}')
+        result[key]=value
+    return result
+
+def reject_constant(value):
+    raise ValueError(f'nonstandard JSON constant: {value}')
