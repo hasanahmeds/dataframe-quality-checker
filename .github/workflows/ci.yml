@@ -1,0 +1,29 @@
+name: tests
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install . -r requirements-dev.txt
+      - run: python -m pytest -q
+      - run: df-quality examples/clean.csv --schema examples/schema.json
+      - run: |
+          set +e
+          df-quality examples/dirty.csv --schema examples/schema.json
+          result=$?
+          test "$result" -eq 1
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t df-quality:test .
+      - run: docker run --rm -v "$PWD/examples:/data:ro" df-quality:test /data/clean.csv --schema /data/schema.json
